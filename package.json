@@ -1,0 +1,7 @@
+{
+  "name": "portafolio",
+  "private": true,
+  "scripts": {
+    "dev": "npx vite --port 3000"
+  }
+}
