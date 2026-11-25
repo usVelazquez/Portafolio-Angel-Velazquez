@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b1120">
+    <title>Panel de Administración | Ángel Velázquez</title>
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+
+    <style>
+        :root {
+            --bg: #0b1120;
+            --surface: #111c30;
+            --surface-light: #17243b;
+            --surface-hover: #1e2f4d;
+            --primary: #5eead4;
+            --primary-glow: rgba(94, 234, 212, 0.2);
+            --secondary: #60a5fa;
+            --text: #f1f5f9;
+            --muted: #94a3b8;
+            --border: #26354d;
+            --danger: #ef4444;
+            --danger-bg: rgba(239, 68, 68, 0.15);
+            --success: #10b981;
+            --success-bg: rgba(16, 185, 129, 0.15);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --container: 1100px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Utilidades */
+        .container {
+            width: min(92%, var(--container));
+            margin-inline: auto;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 9px 18px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--bg);
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 15px var(--primary-glow);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--surface-light);
+            border-color: var(--border);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: var(--surface-hover);
+            border-color: var(--muted);
+        }
+
+        .btn-danger {
+            background: var(--danger-bg);
+            border-color: var(--danger);
+            color: #fca5a5;
+        }
+
+        .btn-danger:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        /* Topbar / Navegación */
+        .topbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .topbar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text);
+        }
+
+        .brand span {
+            color: var(--primary);
+        }
+
+        .badge-admin {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            background: rgba(94, 234, 212, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-email {
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        /* Login Card */
+        .login-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .login-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .login-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .login-card p {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #cbd5e1;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* Banner de Alerta / Configuración */
+        .alert-banner {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid #f59e0b;
+            color: #fbbf24;
+            padding: 14px 20px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Main Content & Tabs */
+        .main-content {
+            padding: 40px 0 80px;
+            flex: 1;
+        }
+
+        .tabs-header {
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1rem;
+            font-weight: 500;
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .badge-count {
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            padding: 2px 7px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+        }
+
+        .section-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .section-actions h3 {
+            font-size: 1.3rem;
+        }
+
+        /* Listados & Tarjetas */
+        .admin-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .admin-item-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            transition: border-color 0.2s ease;
+        }
+
+        .admin-item-card:hover {
+            border-color: rgba(94, 234, 212, 0.4);
+        }
+
+        .item-details {
+            flex: 1;
+        }
+
+        .item-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        .item-header h4 {
+            font-size: 1.15rem;
+            color: var(--text);
+        }
+
+        .item-order {
+            font-family: monospace;
+            font-size: 0.8rem;
+            background: var(--surface-light);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--muted);
+        }
+
+        .item-meta {
+            color: var(--secondary);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .item-date {
+            color: var(--primary);
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .item-bullets {
+            list-style: disc;
+            padding-left: 20px;
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Proyectos Card en Admin */
+        .project-status-pill {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: rgba(94, 234, 212, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(94, 234, 212, 0.3);
+            text-transform: uppercase;
+        }
+
+        .tech-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .tech-tag {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: #cbd5e1;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-header h3 {
+            font-size: 1.3rem;
+            color: var(--text);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--text);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .bullets-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .bullet-input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 14px 20px;
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-size: 0.9rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--danger);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <div class="container topbar-content">
+            <div class="brand">
+                <span>&lt;/&gt;</span> Portafolio Admin
+                <span class="badge-admin">Supabase DB</span>
+            </div>
+
+            <div class="topbar-actions" id="topbar-actions">
+                <a href="index.html" class="btn btn-secondary btn-sm" target="_blank">
+                    Ver Portafolio &rarr;
+                </a>
+                <span class="user-email hidden" id="current-user-email"></span>
+                <button class="btn btn-secondary btn-sm hidden" id="btn-logout">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- BANNER DE CONFIGURACIÓN PENDIENTE (SI FALTA LLENAR supabase-config.js) -->
+    <div class="container hidden" id="config-warning" style="margin-top: 25px;">
+        <div class="alert-banner">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div>
+                <strong>Configuración pendiente:</strong> Debes colocar la URL y la Anon Key de tu proyecto en el archivo <code>supabase-config.js</code> para que el panel pueda conectarse a tu base de datos.
+            </div>
+        </div>
+    </div>
+
+    <!-- PANTALLA 1: INICIO DE SESIÓN -->
+    <main class="login-wrapper" id="view-login">
+        <div class="login-card">
+            <h2>Acceso al Panel</h2>
+            <p>Ingresa tus credenciales de administrador para gestionar tu experiencia y proyectos.</p>
+
+            <form id="form-login">
+                <div class="form-group">
+                    <label for="login-email">Correo Electrónico</label>
+                    <input type="email" id="login-email" class="form-control" placeholder="tu-correo@ejemplo.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password">Contraseña</label>
+                    <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;" id="btn-login-submit">
+                    Iniciar Sesión
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <!-- PANTALLA 2: DASHBOARD (ADMINISTRADOR) -->
+    <main class="main-content hidden" id="view-dashboard">
+        <div class="container">
+            <!-- PESTAÑAS -->
+            <div class="tabs-header">
+                <button class="tab-btn active" data-tab="tab-experiencias" id="tab-btn-experiencias">
+                    💼 Experiencia Laboral
+                    <span class="badge-count" id="count-experiencias">0</span>
+                </button>
+                <button class="tab-btn" data-tab="tab-proyectos" id="tab-btn-proyectos">
+                    🚀 Proyectos
+                    <span class="badge-count" id="count-proyectos">0</span>
+                </button>
+            </div>
+
+            <!-- CONTENIDO TAB 1: EXPERIENCIAS -->
+            <section id="tab-experiencias">
+                <div class="section-actions">
+                    <div>
+                        <h3>Historial de Empleos</h3>
+                        <p style="color: var(--muted); font-size: 0.85rem;">Organiza tus cargos profesionales en la línea de tiempo.</p>
+                    </div>
+                    <button class="btn btn-primary" id="btn-nueva-exp">
+                        + Nueva Experiencia
+                    </button>
+                </div>
+
+                <div class="admin-list" id="lista-experiencias">
+                    <!-- Se llena con JS -->
+                </div>
+            </section>
+
+            <!-- CONTENIDO TAB 2: PROYECTOS -->
+            <section id="tab-proyectos" class="hidden">
+                <div class="section-actions">
+                    <div>
+                        <h3>Portafolio de Proyectos</h3>
+                        <p style="color: var(--muted); font-size: 0.85rem;">Agrega tus aplicaciones, sistemas y desarrollos personales.</p>
+                    </div>
+                    <button class="btn btn-primary" id="btn-nuevo-proj">
+                        + Nuevo Proyecto
+                    </button>
+                </div>
+
+                <div class="admin-list" id="lista-proyectos">
+                    <!-- Se llena con JS -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- MODAL EXPERIENCIA (Crear / Editar) -->
+    <div class="modal-overlay" id="modal-experiencia">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-exp-title">Nueva Experiencia</h3>
+                <button class="modal-close" data-close="modal-experiencia">&times;</button>
+            </div>
+
+            <form id="form-exp">
+                <input type="hidden" id="exp-id">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="exp-puesto">Puesto / Cargo</label>
+                        <input type="text" id="exp-puesto" class="form-control" placeholder="Ej: Auxiliar de Sistemas" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="exp-empresa">Empresa</label>
+                        <input type="text" id="exp-empresa" class="form-control" placeholder="Ej: VMC Project Management" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="exp-periodo">Periodo de Tiempo</label>
+                        <input type="text" id="exp-periodo" class="form-control" placeholder="Ej: Nov 2025 — Jul 2026" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="exp-orden">Orden (menor aparece primero)</label>
+                        <input type="number" id="exp-orden" class="form-control" value="1" min="1" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Viñetas de actividades y responsabilidades:</label>
+                    <div class="bullets-container" id="bullets-container">
+                        <!-- Filas de inputs generadas dinámicamente -->
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-add-bullet">
+                        + Agregar Viñeta
+                    </button>
+                </div>
+
+                <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="exp-activo" checked style="accent-color: var(--primary); width: 18px; height: 18px;">
+                    <label for="exp-activo" style="margin: 0; cursor: pointer;">Visible en el portafolio (Activo)</label>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+                    <button type="button" class="btn btn-secondary" data-close="modal-experiencia">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btn-exp-save">Guardar Experiencia</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PROYECTO (Crear / Editar) -->
+    <div class="modal-overlay" id="modal-proyecto">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-proj-title">Nuevo Proyecto</h3>
+                <button class="modal-close" data-close="modal-proyecto">&times;</button>
+            </div>
+
+            <form id="form-proj">
+                <input type="hidden" id="proj-id">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="proj-titulo">Título del Proyecto</label>
+                        <input type="text" id="proj-titulo" class="form-control" placeholder="Ej: TRG — Finanzas Personales" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="proj-estado">Estado / Categoría</label>
+                        <input type="text" id="proj-estado" class="form-control" placeholder="Ej: En diseño, Proyecto personal, Completado" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="proj-siglas">Siglas visuales para banner (si no hay imagen)</label>
+                        <input type="text" id="proj-siglas" class="form-control" placeholder="Ej: TRG. o </>" value="</>">
+                    </div>
+                    <div class="form-group">
+                        <label for="proj-orden">Orden (menor aparece primero)</label>
+                        <input type="number" id="proj-orden" class="form-control" value="1" min="1" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="proj-imagen">URL de Imagen (Opcional, si tienes banner)</label>
+                    <input type="url" id="proj-imagen" class="form-control" placeholder="https://ejemplo.com/captura.jpg">
+                </div>
+
+                <div class="form-group">
+                    <label for="proj-descripcion">Descripción detallada</label>
+                    <textarea id="proj-descripcion" class="form-control" placeholder="Explica qué problema resuelve, cómo funciona y qué destaca..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="proj-tecnologias">Tecnologías (separadas por coma)</label>
+                    <input type="text" id="proj-tecnologias" class="form-control" placeholder="Ej: HTML5, CSS3, JavaScript, Supabase">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="proj-github">Enlace al Repositorio (GitHub - opcional)</label>
+                        <input type="url" id="proj-github" class="form-control" placeholder="https://github.com/usuario/repo">
+                    </div>
+                    <div class="form-group">
+                        <label for="proj-demo">Enlace a Demo en Vivo (opcional)</label>
+                        <input type="url" id="proj-demo" class="form-control" placeholder="https://miapp.vercel.app">
+                    </div>
+                </div>
+
+                <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="proj-activo" checked style="accent-color: var(--primary); width: 18px; height: 18px;">
+                    <label for="proj-activo" style="margin: 0; cursor: pointer;">Visible en el portafolio (Activo)</label>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+                    <button type="button" class="btn btn-secondary" data-close="modal-proyecto">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btn-proj-save">Guardar Proyecto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR DE TOASTS -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- LÓGICA DE CONTROL DEL PANEL -->
+    <script>
+        // Estado global de la aplicación
+        let state = {
+            user: null,
+            experiencias: [],
+            proyectos: []
+        };
+
+        // Elementos del DOM
+        const configWarning = document.getElementById("config-warning");
+        const viewLogin = document.getElementById("view-login");
+        const viewDashboard = document.getElementById("view-dashboard");
+        const currentUserEmail = document.getElementById("current-user-email");
+        const btnLogout = document.getElementById("btn-logout");
+
+        // Tabs
+        const tabBtnExp = document.getElementById("tab-btn-experiencias");
+        const tabBtnProj = document.getElementById("tab-btn-proyectos");
+        const tabExp = document.getElementById("tab-experiencias");
+        const tabProj = document.getElementById("tab-proyectos");
+
+        // Notificaciones Toast
+        function showToast(message, type = "success") {
+            const container = document.getElementById("toast-container");
+            const toast = document.createElement("div");
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, 3500);
+        }
+
+        // Sanitización simple
+        function escape(str) {
+            if (!str) return "";
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // ==============================================================================
+        // INICIALIZACIÓN Y AUTENTICACIÓN
+        // ==============================================================================
+        document.addEventListener("DOMContentLoaded", async () => {
+            if (!window.supabaseClient) {
+                configWarning.classList.remove("hidden");
+                return;
+            }
+
+            // Escuchar cambios de estado en autenticación
+            window.supabaseClient.auth.onAuthStateChange((event, session) => {
+                if (session && session.user) {
+                    state.user = session.user;
+                    showDashboard();
+                } else {
+                    state.user = null;
+                    showLogin();
+                }
+            });
+
+            // Verificar sesión activa
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            if (session && session.user) {
+                state.user = session.user;
+                showDashboard();
+            } else {
+                showLogin();
+            }
+        });
+
+        function showLogin() {
+            viewLogin.classList.remove("hidden");
+            viewDashboard.classList.add("hidden");
+            currentUserEmail.classList.add("hidden");
+            btnLogout.classList.add("hidden");
+        }
+
+        function showDashboard() {
+            viewLogin.classList.add("hidden");
+            viewDashboard.classList.remove("hidden");
+            currentUserEmail.textContent = state.user.email;
+            currentUserEmail.classList.remove("hidden");
+            btnLogout.classList.remove("hidden");
+
+            cargarExperienciasAdmin();
+            cargarProyectosAdmin();
+        }
+
+        // Enviar Login
+        document.getElementById("form-login").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("login-email").value.trim();
+            const password = document.getElementById("login-password").value;
+            const submitBtn = document.getElementById("btn-login-submit");
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Verificando...";
+
+            try {
+                const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                if (error) {
+                    showToast(error.message || "Error al iniciar sesión", "error");
+                } else {
+                    showToast("¡Bienvenido al panel!");
+                }
+            } catch (err) {
+                showToast("Error de conexión con Supabase", "error");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Iniciar Sesión";
+            }
+        });
+
+        // Cerrar sesión
+        btnLogout.addEventListener("click", async () => {
+            await window.supabaseClient.auth.signOut();
+            showToast("Sesión cerrada");
+        });
+
+        // Navegación de Tabs
+        tabBtnExp.addEventListener("click", () => {
+            tabBtnExp.classList.add("active");
+            tabBtnProj.classList.remove("active");
+            tabExp.classList.remove("hidden");
+            tabProj.classList.add("hidden");
+        });
+
+        tabBtnProj.addEventListener("click", () => {
+            tabBtnProj.classList.add("active");
+            tabBtnExp.classList.remove("active");
+            tabProj.classList.remove("hidden");
+            tabExp.classList.add("hidden");
+        });
+
+        // ==============================================================================
+        // GESTIÓN DE EXPERIENCIAS
+        // ==============================================================================
+        async function cargarExperienciasAdmin() {
+            const container = document.getElementById("lista-experiencias");
+            container.innerHTML = `<div style="color: var(--muted); padding: 20px;">Cargando experiencias...</div>`;
+
+            const { data, error } = await window.supabaseClient
+                .from("experiencias")
+                .select("*")
+                .order("orden", { ascending: true });
+
+            if (error) {
+                container.innerHTML = `<div style="color: var(--danger);">Error al cargar: ${escape(error.message)}</div>`;
+                return;
+            }
+
+            state.experiencias = data || [];
+            document.getElementById("count-experiencias").textContent = state.experiencias.length;
+
+            if (state.experiencias.length === 0) {
+                container.innerHTML = `<div style="color: var(--muted); padding: 30px; text-align: center; background: var(--surface); border-radius: var(--radius); border: 1px dashed var(--border);">No hay experiencias registradas aún. Haz clic en "+ Nueva Experiencia" para agregar una.</div>`;
+                return;
+            }
+
+            container.innerHTML = state.experiencias.map(exp => {
+                const bullets = Array.isArray(exp.descripcion) ? exp.descripcion : [];
+                return `
+                    <div class="admin-item-card">
+                        <div class="item-details">
+                            <div class="item-header">
+                                <span class="item-order">#${exp.orden}</span>
+                                <h4>${escape(exp.puesto)}</h4>
+                                ${exp.activo ? '' : '<span style="color: #fca5a5; font-size: 0.75rem; background: var(--danger-bg); padding: 2px 6px; border-radius: 4px;">Oculto</span>'}
+                            </div>
+                            <div class="item-meta">
+                                <strong>${escape(exp.empresa)}</strong>
+                                <span>&bull;</span>
+                                <span class="item-date">${escape(exp.periodo)}</span>
+                            </div>
+                            ${bullets.length > 0 ? `
+                                <ul class="item-bullets">
+                                    ${bullets.slice(0, 3).map(b => `<li>${escape(b)}</li>`).join("")}
+                                    ${bullets.length > 3 ? `<li style="list-style: none; color: var(--primary); font-size: 0.8rem;">+ ${bullets.length - 3} viñetas más...</li>` : ''}
+                                </ul>
+                            ` : ''}
+                        </div>
+                        <div class="item-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="abrirModalEditarExp('${exp.id}')">Editar</button>
+                            <button class="btn btn-danger btn-sm" onclick="eliminarExperiencia('${exp.id}')">Eliminar</button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        // Manejo de viñetas dinámicas en Modal
+        function renderBulletInputs(bullets = [""]) {
+            const container = document.getElementById("bullets-container");
+            container.innerHTML = "";
+            bullets.forEach((text) => {
+                addBulletInputRow(text);
+            });
+        }
+
+        function addBulletInputRow(value = "") {
+            const container = document.getElementById("bullets-container");
+            const row = document.createElement("div");
+            row.className = "bullet-input-row";
+            row.innerHTML = `
+                <input type="text" class="form-control bullet-input" placeholder="Ej: Mantenimiento preventivo a equipos..." value="${escape(value)}">
+                <button type="button" class="btn btn-danger btn-sm btn-remove-bullet">&times;</button>
+            `;
+            row.querySelector(".btn-remove-bullet").addEventListener("click", () => {
+                row.remove();
+            });
+            container.appendChild(row);
+        }
+
+        document.getElementById("btn-add-bullet").addEventListener("click", () => {
+            addBulletInputRow("");
+        });
+
+        // Abrir Modal para Crear Experiencia
+        document.getElementById("btn-nueva-exp").addEventListener("click", () => {
+            document.getElementById("modal-exp-title").textContent = "Nueva Experiencia";
+            document.getElementById("exp-id").value = "";
+            document.getElementById("exp-puesto").value = "";
+            document.getElementById("exp-empresa").value = "";
+            document.getElementById("exp-periodo").value = "";
+            document.getElementById("exp-orden").value = state.experiencias.length + 1;
+            document.getElementById("exp-activo").checked = true;
+            renderBulletInputs([""]);
+            openModal("modal-experiencia");
+        });
+
+        // Abrir Modal para Editar Experiencia
+        window.abrirModalEditarExp = function(id) {
+            const exp = state.experiencias.find(e => e.id === id);
+            if (!exp) return;
+
+            document.getElementById("modal-exp-title").textContent = "Editar Experiencia";
+            document.getElementById("exp-id").value = exp.id;
+            document.getElementById("exp-puesto").value = exp.puesto || "";
+            document.getElementById("exp-empresa").value = exp.empresa || "";
+            document.getElementById("exp-periodo").value = exp.periodo || "";
+            document.getElementById("exp-orden").value = exp.orden || 1;
+            document.getElementById("exp-activo").checked = exp.activo ?? true;
+
+            const bullets = Array.isArray(exp.descripcion) && exp.descripcion.length > 0 ? exp.descripcion : [""];
+            renderBulletInputs(bullets);
+            openModal("modal-experiencia");
+        };
+
+        // Guardar Experiencia
+        document.getElementById("form-exp").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const id = document.getElementById("exp-id").value;
+            const puesto = document.getElementById("exp-puesto").value.trim();
+            const empresa = document.getElementById("exp-empresa").value.trim();
+            const periodo = document.getElementById("exp-periodo").value.trim();
+            const orden = parseInt(document.getElementById("exp-orden").value, 10) || 1;
+            const activo = document.getElementById("exp-activo").checked;
+
+            const bulletInputs = document.querySelectorAll(".bullet-input");
+            const descripcion = Array.from(bulletInputs)
+                .map(input => input.value.trim())
+                .filter(val => val.length > 0);
+
+            const payload = { puesto, empresa, periodo, orden, activo, descripcion };
+            const saveBtn = document.getElementById("btn-exp-save");
+            saveBtn.disabled = true;
+
+            try {
+                if (id) {
+                    const { error } = await window.supabaseClient
+                        .from("experiencias")
+                        .update(payload)
+                        .eq("id", id);
+                    if (error) throw error;
+                    showToast("Experiencia actualizada exitosamente");
+                } else {
+                    const { error } = await window.supabaseClient
+                        .from("experiencias")
+                        .insert([payload]);
+                    if (error) throw error;
+                    showToast("Experiencia creada exitosamente");
+                }
+                closeModal("modal-experiencia");
+                cargarExperienciasAdmin();
+            } catch (err) {
+                showToast(err.message || "Error al guardar experiencia", "error");
+            } finally {
+                saveBtn.disabled = false;
+            }
+        });
+
+        // Eliminar Experiencia
+        window.eliminarExperiencia = async function(id) {
+            if (!confirm("¿Estás seguro de que deseas eliminar este empleo/experiencia?")) return;
+
+            try {
+                const { error } = await window.supabaseClient
+                    .from("experiencias")
+                    .delete()
+                    .eq("id", id);
+
+                if (error) throw error;
+                showToast("Experiencia eliminada");
+                cargarExperienciasAdmin();
+            } catch (err) {
+                showToast(err.message || "Error al eliminar", "error");
+            }
+        };
+
+        // ==============================================================================
+        // GESTIÓN DE PROYECTOS
+        // ==============================================================================
+        async function cargarProyectosAdmin() {
+            const container = document.getElementById("lista-proyectos");
+            container.innerHTML = `<div style="color: var(--muted); padding: 20px;">Cargando proyectos...</div>`;
+
+            const { data, error } = await window.supabaseClient
+                .from("proyectos")
+                .select("*")
+                .order("orden", { ascending: true });
+
+            if (error) {
+                container.innerHTML = `<div style="color: var(--danger);">Error al cargar: ${escape(error.message)}</div>`;
+                return;
+            }
+
+            state.proyectos = data || [];
+            document.getElementById("count-proyectos").textContent = state.proyectos.length;
+
+            if (state.proyectos.length === 0) {
+                container.innerHTML = `<div style="color: var(--muted); padding: 30px; text-align: center; background: var(--surface); border-radius: var(--radius); border: 1px dashed var(--border);">No hay proyectos registrados aún. Haz clic en "+ Nuevo Proyecto" para agregar uno.</div>`;
+                return;
+            }
+
+            container.innerHTML = state.proyectos.map(proj => {
+                const tags = Array.isArray(proj.tecnologias) ? proj.tecnologias : [];
+                return `
+                    <div class="admin-item-card">
+                        <div class="item-details">
+                            <div class="item-header">
+                                <span class="item-order">#${proj.orden}</span>
+                                <span class="project-status-pill">${escape(proj.estado)}</span>
+                                <h4>${escape(proj.titulo)}</h4>
+                                ${proj.activo ? '' : '<span style="color: #fca5a5; font-size: 0.75rem; background: var(--danger-bg); padding: 2px 6px; border-radius: 4px;">Oculto</span>'}
+                            </div>
+                            <p style="color: var(--muted); font-size: 0.9rem; margin-top: 6px;">${escape(proj.descripcion)}</p>
+                            ${tags.length > 0 ? `
+                                <div class="tech-tags">
+                                    ${tags.map(t => `<span class="tech-tag">${escape(t)}</span>`).join("")}
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="item-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="abrirModalEditarProj('${proj.id}')">Editar</button>
+                            <button class="btn btn-danger btn-sm" onclick="eliminarProyecto('${proj.id}')">Eliminar</button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        // Abrir Modal para Crear Proyecto
+        document.getElementById("btn-nuevo-proj").addEventListener("click", () => {
+            document.getElementById("modal-proj-title").textContent = "Nuevo Proyecto";
+            document.getElementById("proj-id").value = "";
+            document.getElementById("proj-titulo").value = "";
+            document.getElementById("proj-estado").value = "Proyecto personal";
+            document.getElementById("proj-siglas").value = "</>";
+            document.getElementById("proj-imagen").value = "";
+            document.getElementById("proj-descripcion").value = "";
+            document.getElementById("proj-tecnologias").value = "";
+            document.getElementById("proj-github").value = "";
+            document.getElementById("proj-demo").value = "";
+            document.getElementById("proj-orden").value = state.proyectos.length + 1;
+            document.getElementById("proj-activo").checked = true;
+            openModal("modal-proyecto");
+        });
+
+        // Abrir Modal para Editar Proyecto
+        window.abrirModalEditarProj = function(id) {
+            const proj = state.proyectos.find(p => p.id === id);
+            if (!proj) return;
+
+            document.getElementById("modal-proj-title").textContent = "Editar Proyecto";
+            document.getElementById("proj-id").value = proj.id;
+            document.getElementById("proj-titulo").value = proj.titulo || "";
+            document.getElementById("proj-estado").value = proj.estado || "Proyecto personal";
+            document.getElementById("proj-siglas").value = proj.siglas || "</>";
+            document.getElementById("proj-imagen").value = proj.imagen_url || "";
+            document.getElementById("proj-descripcion").value = proj.descripcion || "";
+            document.getElementById("proj-tecnologias").value = Array.isArray(proj.tecnologias) ? proj.tecnologias.join(", ") : "";
+            document.getElementById("proj-github").value = proj.enlace_github || "";
+            document.getElementById("proj-demo").value = proj.enlace_demo || "";
+            document.getElementById("proj-orden").value = proj.orden || 1;
+            document.getElementById("proj-activo").checked = proj.activo ?? true;
+
+            openModal("modal-proyecto");
+        };
+
+        // Guardar Proyecto
+        document.getElementById("form-proj").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const id = document.getElementById("proj-id").value;
+            const titulo = document.getElementById("proj-titulo").value.trim();
+            const estado = document.getElementById("proj-estado").value.trim();
+            const siglas = document.getElementById("proj-siglas").value.trim() || "</>";
+            const imagen_url = document.getElementById("proj-imagen").value.trim() || null;
+            const descripcion = document.getElementById("proj-descripcion").value.trim();
+            const rawTech = document.getElementById("proj-tecnologias").value;
+            const tecnologias = rawTech
+                .split(",")
+                .map(t => t.trim())
+                .filter(t => t.length > 0);
+            const enlace_github = document.getElementById("proj-github").value.trim() || null;
+            const enlace_demo = document.getElementById("proj-demo").value.trim() || null;
+            const orden = parseInt(document.getElementById("proj-orden").value, 10) || 1;
+            const activo = document.getElementById("proj-activo").checked;
+
+            const payload = {
+                titulo,
+                estado,
+                siglas,
+                imagen_url,
+                descripcion,
+                tecnologias,
+                enlace_github,
+                enlace_demo,
+                orden,
+                activo
+            };
+
+            const saveBtn = document.getElementById("btn-proj-save");
+            saveBtn.disabled = true;
+
+            try {
+                if (id) {
+                    const { error } = await window.supabaseClient
+                        .from("proyectos")
+                        .update(payload)
+                        .eq("id", id);
+                    if (error) throw error;
+                    showToast("Proyecto actualizado exitosamente");
+                } else {
+                    const { error } = await window.supabaseClient
+                        .from("proyectos")
+                        .insert([payload]);
+                    if (error) throw error;
+                    showToast("Proyecto creado exitosamente");
+                }
+                closeModal("modal-proyecto");
+                cargarProyectosAdmin();
+            } catch (err) {
+                showToast(err.message || "Error al guardar proyecto", "error");
+            } finally {
+                saveBtn.disabled = false;
+            }
+        });
+
+        // Eliminar Proyecto
+        window.eliminarProyecto = async function(id) {
+            if (!confirm("¿Estás seguro de que deseas eliminar este proyecto?")) return;
+
+            try {
+                const { error } = await window.supabaseClient
+                    .from("proyectos")
+                    .delete()
+                    .eq("id", id);
+
+                if (error) throw error;
+                showToast("Proyecto eliminado");
+                cargarProyectosAdmin();
+            } catch (err) {
+                showToast(err.message || "Error al eliminar", "error");
+            }
+        };
+
+        // ==============================================================================
+        // MANEJO DE MODALES
+        // ==============================================================================
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add("active");
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove("active");
+        }
+
+        document.querySelectorAll("[data-close]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const modalId = btn.getAttribute("data-close");
+                closeModal(modalId);
+            });
+        });
+
+        window.addEventListener("click", (e) => {
+            if (e.target.classList.contains("modal-overlay")) {
+                e.target.classList.remove("active");
+            }
+        });
+    </script>
+</body>
+
+</html>
